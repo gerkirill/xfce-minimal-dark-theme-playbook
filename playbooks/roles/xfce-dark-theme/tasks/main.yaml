@@ -1,0 +1,64 @@
+---
+- name: Read /etc/passwd to find regular user
+  ansible.builtin.shell: |
+    grep -E ':/bin/(bash|zsh|sh|fish)$' /etc/passwd | \
+    grep -v '^root:' | \
+    head -n 1 | \
+    cut -d: -f1
+  register: regular_user_result
+  changed_when: false
+  failed_when: regular_user_result.stdout == ""
+
+- name: Set regular username fact
+  ansible.builtin.set_fact:
+    regular_username: "{{ regular_user_result.stdout }}"
+
+- name: Get regular user home directory
+  ansible.builtin.shell: |
+    grep "^{{ regular_username }}:" /etc/passwd | cut -d: -f6
+  register: user_home_result
+  changed_when: false
+
+- name: Set user home directory fact
+  ansible.builtin.set_fact:
+    user_home_dir: "{{ user_home_result.stdout }}"
+
+- name: Display detected user information
+  ansible.builtin.debug:
+    msg: "Detected regular user: {{ regular_username }}, home directory: {{ user_home_dir }}"
+
+- name: Get the directory where the playbook is located
+  ansible.builtin.set_fact:
+    playbook_dir: "{{ playbook_dir }}"
+
+- name: Find HOME directory relative to playbook
+  ansible.builtin.set_fact:
+    source_home_dir: "{{ playbook_dir }}/../../HOME"
+
+- name: Ensure target .config directory exists
+  ansible.builtin.file:
+    path: "{{ user_home_dir }}/.config"
+    state: directory
+    owner: "{{ regular_username }}"
+    group: "{{ regular_username }}"
+    mode: '0755'
+
+- name: Copy XFCE configuration files to user home directory
+  ansible.builtin.copy:
+    src: "{{ source_home_dir }}/.config/"
+    dest: "{{ user_home_dir }}/.config/"
+    owner: "{{ regular_username }}"
+    group: "{{ regular_username }}"
+    mode: preserve
+    force: yes
+
+- name: Set ownership of all copied files
+  ansible.builtin.file:
+    path: "{{ user_home_dir }}/.config"
+    owner: "{{ regular_username }}"
+    group: "{{ regular_username }}"
+    recurse: yes
+
+- name: Display completion message
+  ansible.builtin.debug:
+    msg: "XFCE dark theme configuration has been applied for user {{ regular_username }}"

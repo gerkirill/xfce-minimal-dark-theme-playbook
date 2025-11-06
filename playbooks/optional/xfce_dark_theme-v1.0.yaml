@@ -1,0 +1,6 @@
+---
+- hosts: localhost
+  gather_facts: yes
+  tasks:
+    - ansible.builtin.include_role:
+        name: xfce-dark-theme
