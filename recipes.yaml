@@ -3,7 +3,7 @@ recipes:
     name: XFCE Minimal Dark Theme
     description: Applies a minimal dark theme configuration to XFCE desktop environment
     versions:
-      v1.0:
+      v1.0.0:
         playbook: optional/xfce_dark_theme-v1.0.yaml
         metadata:
           supported_arch:
